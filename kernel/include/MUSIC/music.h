@@ -1,4 +1,4 @@
-
+#define SLOWDOWN_FACTOR 80 // Aumenta questo valore per rallentare ulteriormente
 #define PIT_CHANNEL2 0x42
 #define PIT_COMMAND  0x43
 #define PIT_FREQUENCY 1193180
@@ -173,12 +173,11 @@ int melody_length = sizeof(melody) / sizeof(melody[0]);
 
 static int current_note = 0;
 static int note_timer = 0;
-
 void music_tick() {
     if (note_timer <= 0) {
         // passa alla prossima nota
         play_frequency(melody[current_note].freq);
-        note_timer = melody[current_note].duration;
+        note_timer = melody[current_note].duration * SLOWDOWN_FACTOR;  // Aggiungi il fattore di rallentamento
         current_note++;
         if (current_note >= melody_length) {
             current_note = 0; // ricomincia il loop

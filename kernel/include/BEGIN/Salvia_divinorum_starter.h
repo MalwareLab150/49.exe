@@ -1,5 +1,5 @@
-#include "Salvia.h"
 #include <stdbool.h>
+#include "Salvia.h"
 #define SCREEN_WIDTH 80
 #define SCREEN_HEIGHT 25
 #define KEYBOARD_DATA_PORT 0x60
@@ -95,5 +95,6 @@ void START() {
     );
 
     wait_for_enter(); 
+    k_clear_screen(0x00);
     LOAD();         
 }

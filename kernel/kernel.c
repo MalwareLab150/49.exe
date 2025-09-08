@@ -1,9 +1,11 @@
 #include "include/FOTO/image_data.h"
 #include "include/FOTO/SFONDO.h"
 #include "include/FIRST/LOAD.h"
-#include "include/nFire.h"
 #include "include/BEGIN/Salvia_divinorum_starter.h"
 #include "include/MUSIC/music.h"
+#include "include/FOTO/CHIP.h"
+#include "include/FOTO/nCRACKXX.h"
+#include "include/shutdown_ACPI/shutdown.h">
 #define VIDEO_MEM ((volatile uint16_t*)0xB8000)
 #define SCREEN_WIDTH 80
 #define SCREEN_HEIGHT 25
@@ -18,10 +20,18 @@
 #define SCANCODE_S 0x1F
 #define SCANCODE_A 0x1E
 #define SCANCODE_D 0x20
+int current_skin = 0;  // 0 = default, 1 = nFire, 2 = CHIP
 //tempo
 int start_minute = -1;
 int start_second = -1;
+typedef struct {
+    float x, y;
+    float dirX, dirY;
+    float planeX, planeY;
+} Player;
 
+
+// legge cose del cmos.
 static inline uint8_t cmos_read(uint8_t reg) {
     __asm__ volatile ("outb %0, $0x70" :: "a"(reg));
     uint8_t val;
@@ -63,12 +73,6 @@ const int map[MAP_WIDTH * MAP_HEIGHT] = {
     [0 ... (MAP_WIDTH * MAP_HEIGHT - 1)] = 0,
     [7 * MAP_WIDTH + 7] = 1
 };
-
-typedef struct {
-    float x, y;
-    float dirX, dirY;
-    float planeX, planeY;
-} Player;
 
 Player player = {
     8.0f, 6.0f,
@@ -129,16 +133,16 @@ void draw_progress_bar() {
         put_char(textStart + i, 0, buf[i], 0x0F);
     }
 
-static int triggered = 0;
-if (remaining <= 0 && !triggered) {
-    DISEGNA_NCRACK();  
-    triggered = 1;
 
+    if (remaining <= 0) {
+    acpi_shutdown();
+    
    
     while (1) {
-        __asm__ volatile ("hlt"); 
+        __asm__ volatile ("hlt");
+        }
     }
-  }
+
 }
 
 
@@ -239,93 +243,160 @@ void render_frame() {
                     put_char(x, y, wallChar, color);
                 }
             } else {
-               
-                int bgIndex = y * SCREEN_WIDTH + x;
-                char c = FOTO_CHARS[bgIndex];
-                uint8_t color = FOTO_COLORES[bgIndex];
-                put_char(x, y, c, color);
-            }
+    int bgIndex = y * SCREEN_WIDTH + x;
+
+    if (current_skin == 1) {
+        // Skin nFire
+        char c = Nfire[bgIndex];
+        uint8_t color = ncolore[bgIndex];
+        put_char(x, y, c, color);
+    } else if (current_skin == 2) {
+        // Skin chip
+        char c = CHIP[bgIndex];
+        uint8_t color = PATATA_COLORES[bgIndex];
+        put_char(x, y, c, color);
+    } else {
+        // Default
+        char c = FOTO_CHARS[bgIndex];
+        uint8_t color = FOTO_COLORES[bgIndex];
+        put_char(x, y, c, color);
+          }
+          }
         }
     }
 }
-
 
 void delay(int count) {
     for (volatile int i = 0; i < count * 10000; i++)
         __asm__ volatile ("nop");
 }
-
-
 void kmain() {
-    k_clear_screen(0x00);
-    START();
-    k_clear_screen(0x00);
-    const char* lines[] = {
-"=== Welcome! ===",
-"Use W, A, S, D to move",
-"You have 60 seconds to explore",
-"A special wall awaits you...",
-"",
-"Press F to start"
-    };
-
-    int num_lines = sizeof(lines) / sizeof(lines[0]);
-    for (int i = 0; i < num_lines; i++) {
-        const char* msg = lines[i];
-        int len = 0;
-        while (msg[len]) len++;
-        int start_x = (SCREEN_WIDTH - len) / 2;
-        for (int j = 0; j < len; j++) {
-            put_char(start_x + j, 10 + i, msg[j], 0x0F);
-        }
-    }
-
-    
-    while (1) {
-        if (inb(PORT_KEYBOARD_STATUS) & 1) {
-            uint8_t sc = inb(PORT_KEYBOARD_DATA);
-            if (sc == 0x21) break; 
-        }
-    }
-
-    k_clear_screen(0x00); //clear screen
+    int first_run = 1;
 
     while (1) {
-        draw_progress_bar();
-        render_frame();
-        music_tick();  
+  
+        if (first_run) {
+            k_clear_screen(0x00);
+            START();
+            k_clear_screen(0x00);
+            first_run = 0;
+        } else {
+            k_clear_screen(0x00);  
+        }
 
-        if (inb(PORT_KEYBOARD_STATUS) & 1) {
-            uint8_t sc = inb(PORT_KEYBOARD_DATA);
+  
+        const char* lines[] = {
+            "=== Welcome! ===",
+            "Use W, A, S, D to move",
+            "You have 60 seconds to explore",
+            "A special wall awaits you...",
+            "",
+            "Press F to start"
+        };
 
-            if (sc == SCANCODE_W) {
-                float newX = player.x + player.dirX * 0.1f;
-                float newY = player.y + player.dirY * 0.1f;
-                if (map[(int)newY * MAP_WIDTH + (int)newX] == 0) {
-                    player.x = newX;
-                    player.y = newY;
+        int num_lines = sizeof(lines) / sizeof(lines[0]);
+        for (int i = 0; i < num_lines; i++) {
+            const char* msg = lines[i];
+            int len = 0;
+            while (msg[len]) len++;
+            int start_x = (SCREEN_WIDTH - len) / 2;
+            for (int j = 0; j < len; j++) {
+                put_char(start_x + j, 10 + i, msg[j], 0x0F);
+            }
+        }
+
+        while (1) {
+            if (inb(PORT_KEYBOARD_STATUS) & 1) {
+                uint8_t sc = inb(PORT_KEYBOARD_DATA);
+                if (sc == 0x21) break;
+            }
+        }
+
+        k_clear_screen(0x00);
+
+        const char* skin_msg[] = {
+            "Which skin do you want?",
+            "Z = nFire",
+            "X = nPringle chip"
+        };
+
+        for (int i = 0; i < 3; i++) {
+            const char* msg = skin_msg[i];
+            int len = 0;
+            while (msg[len]) len++;
+            int start_x = (SCREEN_WIDTH - len) / 2;
+            for (int j = 0; j < len; j++) {
+                put_char(start_x + j, 10 + i, msg[j], 0x0F);
+            }
+        }
+
+
+        current_skin = 0;
+        while (1) {
+            if (inb(PORT_KEYBOARD_STATUS) & 1) {
+                uint8_t skin_sc = inb(PORT_KEYBOARD_DATA);
+                if (skin_sc == 0x2C) {  // Z
+                    current_skin = 1;
+                    break;
+                } else if (skin_sc == 0x2D) {  // X
+                    current_skin = 2;
+                    break;
                 }
-            } else if (sc == SCANCODE_S) {
-                float newX = player.x - player.dirX * 0.1f;
-                float newY = player.y - player.dirY * 0.1f;
-                if (map[(int)newY * MAP_WIDTH + (int)newX] == 0) {
-                    player.x = newX;
-                    player.y = newY;
+            }
+        }
+
+        start_minute = -1;
+        start_second = -1;
+
+        player.x = 8.0f;
+        player.y = 6.0f;
+        player.dirX = 0.0f;
+        player.dirY = 1.0f;
+        player.planeX = 0.66f;
+        player.planeY = 0.0f;
+
+        k_clear_screen(0x00);
+
+        // === GAME LOOP ===
+        while (1) {
+            draw_progress_bar();
+            render_frame();
+            music_tick();
+
+            if (inb(PORT_KEYBOARD_STATUS) & 1) {
+                uint8_t sc = inb(PORT_KEYBOARD_DATA);
+
+                if (sc == SCANCODE_W) {
+                    float newX = player.x + player.dirX * 0.1f;
+                    float newY = player.y + player.dirY * 0.1f;
+                    if (map[(int)newY * MAP_WIDTH + (int)newX] == 0) {
+                        player.x = newX;
+                        player.y = newY;
+                    }
+                } else if (sc == SCANCODE_S) {
+                    float newX = player.x - player.dirX * 0.1f;
+                    float newY = player.y - player.dirY * 0.1f;
+                    if (map[(int)newY * MAP_WIDTH + (int)newX] == 0) {
+                        player.x = newX;
+                        player.y = newY;
+                    }
+                } else if (sc == SCANCODE_A) {
+                    float oldDirX = player.dirX;
+                    player.dirX = player.dirX * cosf(0.1f) - player.dirY * sinf(0.1f);
+                    player.dirY = oldDirX * sinf(0.1f) + player.dirY * cosf(0.1f);
+                    float oldPlaneX = player.planeX;
+                    player.planeX = player.planeX * cosf(0.1f) - player.planeY * sinf(0.1f);
+                    player.planeY = oldPlaneX * sinf(0.1f) + player.planeY * cosf(0.1f);
+                } else if (sc == SCANCODE_D) {
+                    float oldDirX = player.dirX;
+                    player.dirX = player.dirX * cosf(-0.1f) - player.dirY * sinf(-0.1f);
+                    player.dirY = oldDirX * sinf(-0.1f) + player.dirY * cosf(-0.1f);
+                    float oldPlaneX = player.planeX;
+                    player.planeX = player.planeX * cosf(-0.1f) - player.planeY * sinf(-0.1f);
+                    player.planeY = oldPlaneX * sinf(-0.1f) + player.planeY * cosf(-0.1f);
+                } else if (sc == 0x01) {  // ESC premuto
+                    break;  // esce e ritorna al menù
                 }
-            } else if (sc == SCANCODE_A) {
-                float oldDirX = player.dirX;
-                player.dirX = player.dirX * cosf(0.1f) - player.dirY * sinf(0.1f);
-                player.dirY = oldDirX * sinf(0.1f) + player.dirY * cosf(0.1f);
-                float oldPlaneX = player.planeX;
-                player.planeX = player.planeX * cosf(0.1f) - player.planeY * sinf(0.1f);
-                player.planeY = oldPlaneX * sinf(0.1f) + player.planeY * cosf(0.1f);
-            } else if (sc == SCANCODE_D) {
-                float oldDirX = player.dirX;
-                player.dirX = player.dirX * cosf(-0.1f) - player.dirY * sinf(-0.1f);
-                player.dirY = oldDirX * sinf(-0.1f) + player.dirY * cosf(-0.1f);
-                float oldPlaneX = player.planeX;
-                player.planeX = player.planeX * cosf(-0.1f) - player.planeY * sinf(-0.1f);
-                player.planeY = oldPlaneX * sinf(-0.1f) + player.planeY * cosf(-0.1f);
             }
         }
     }

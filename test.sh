@@ -33,10 +33,12 @@ TOTAL_SIZE=$((TOTAL_SECTORS * 512))
 
 truncate -s $TOTAL_SIZE $DISK_IMG
 
+# Scrive i binari nelle posizioni corrette
 dd if=$BUILD/boot.bin   of=$DISK_IMG bs=512 seek=0           conv=notrunc status=none
 dd if=$BUILD/loader.bin of=$DISK_IMG bs=512 seek=1           conv=notrunc status=none
 dd if=$BUILD/kernel.bin of=$DISK_IMG bs=512 seek=$KERNEL_LBA conv=notrunc status=none
 
+# Rimuove eventuale spazio extra (opzionale ma pulito)
 REAL_SIZE=$(stat -c %s $DISK_IMG)
 truncate -s $REAL_SIZE $DISK_IMG
 
