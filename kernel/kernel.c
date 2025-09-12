@@ -5,7 +5,8 @@
 #include "include/MUSIC/music.h"
 #include "include/FOTO/CHIP.h"
 #include "include/FOTO/nCRACKXX.h"
-#include "include/shutdown_ACPI/shutdown.h">
+#include "include/shutdown_ACPI/shutdown.h"
+#include "include/mandelbrot/mandelbrot.h"
 #define VIDEO_MEM ((volatile uint16_t*)0xB8000)
 #define SCREEN_WIDTH 80
 #define SCREEN_HEIGHT 25
@@ -71,7 +72,8 @@ static inline void put_char(int x, int y, char c, uint8_t color) {
 
 const int map[MAP_WIDTH * MAP_HEIGHT] = {
     [0 ... (MAP_WIDTH * MAP_HEIGHT - 1)] = 0,
-    [7 * MAP_WIDTH + 7] = 1
+    [7 * MAP_WIDTH + 7]  = 1,   // muro immagine
+    [5 * MAP_WIDTH + 10] = 2    // muro triangolo Sierpiński
 };
 
 Player player = {
@@ -104,7 +106,7 @@ void draw_progress_bar() {
     frame++;
 
     if (remaining <= 5) {
-        if ((frame / 10) % 2 == 0) color = 0x0C; // rosso lampeggiante
+        if ((frame / 10) % 2 == 0) color = 0x04; // rosso lampeggiante
         else color = 0x00;
     } else if (remaining <= 20) {
         if ((frame / 20) % 2 == 0) color = 0x0E; // giallo lampeggiante
@@ -135,15 +137,12 @@ void draw_progress_bar() {
 
 
     if (remaining <= 0) {
-    acpi_shutdown();
+    MANDELBROT_THING();
     
    
-    while (1) {
-        __asm__ volatile ("hlt");
+ 
         }
     }
-
-}
 
 
 void get_time(int *h, int *m, int *s) {
@@ -155,7 +154,6 @@ void get_time(int *h, int *m, int *s) {
     *m = bcd_to_bin(min);
     *h = bcd_to_bin(hr);
 }
-
 
 void render_frame() {
     for (int x = 0; x < SCREEN_WIDTH; x++) {
@@ -224,9 +222,7 @@ void render_frame() {
 
         for (int y = 1; y < SCREEN_HEIGHT; y++) {  
             if (y >= drawStart && y <= drawEnd) {
-                
                 if (mapX == 7 && mapY == 7) {
-                   
                     int wallPixel = y - drawStart;
                     int wallHeight = drawEnd - drawStart + 1;
                     int imgY = (wallPixel * SCREEN_HEIGHT) / wallHeight;
@@ -236,35 +232,47 @@ void render_frame() {
                     char c = image_chars[imgIndex];
                     uint8_t color = image_colors[imgIndex];
                     put_char(x, y, c, color);
+
+                } else if (mapX == 10 && mapY == 5) { // siepesky
+                    int wallPixel = y - drawStart;
+                    int wallHeight = drawEnd - drawStart + 1;
+
+                    int dx = x % wallHeight;
+                    int dy = wallPixel;
+
+                    if ((dx & dy) == 0) {
+                        uint8_t color = 0x0B; // bianco
+                        put_char(x, y, 0xDB, color);
+                    } else {
+                        put_char(x, y, ' ', 0x00);
+                    }
+
                 } else {
-                    
                     char wallChar = 0xDB;
                     uint8_t color = (side == 1) ? COLOR_DARK_GREY : COLOR_LIGHT_GREY;
                     put_char(x, y, wallChar, color);
                 }
             } else {
-    int bgIndex = y * SCREEN_WIDTH + x;
+                int bgIndex = y * SCREEN_WIDTH + x;
 
-    if (current_skin == 1) {
-        // Skin nFire
-        char c = Nfire[bgIndex];
-        uint8_t color = ncolore[bgIndex];
-        put_char(x, y, c, color);
-    } else if (current_skin == 2) {
-        // Skin chip
-        char c = CHIP[bgIndex];
-        uint8_t color = PATATA_COLORES[bgIndex];
-        put_char(x, y, c, color);
-    } else {
-        // Default
-        char c = FOTO_CHARS[bgIndex];
-        uint8_t color = FOTO_COLORES[bgIndex];
-        put_char(x, y, c, color);
-          }
-          }
+                if (current_skin == 1) {
+                    char c = Nfire[bgIndex];
+                    uint8_t color = ncolore[bgIndex];
+                    put_char(x, y, c, color);
+                } else if (current_skin == 2) {
+                    char c = CHIP[bgIndex];
+                    uint8_t color = PATATA_COLORES[bgIndex];
+                    put_char(x, y, c, color);
+                } else {
+                    char c = FOTO_CHARS[bgIndex];
+                    uint8_t color = FOTO_COLORES[bgIndex];
+                    put_char(x, y, c, color);
+                }
+            }
         }
     }
 }
+
 
 void delay(int count) {
     for (volatile int i = 0; i < count * 10000; i++)
@@ -357,7 +365,6 @@ void kmain() {
 
         k_clear_screen(0x00);
 
-        // === GAME LOOP ===
         while (1) {
             draw_progress_bar();
             render_frame();
@@ -397,7 +404,7 @@ void kmain() {
                 } else if (sc == 0x01) {  // ESC premuto
                     break;  // esce e ritorna al menù
                 }
-            }
-        }
-    }
-}
+              }
+          }
+      }
+       }

@@ -3,18 +3,14 @@ typedef uint16_t word;
 typedef uint32_t dword;
 #define SCI_EN 0x0001
 #define SLP_EN (1 << 13)
-
-static inline uint16_t inWW(uint16_t port) {
+// sezione delle porte 
+static inline uint16_t inw(uint16_t port) {
     uint16_t result;
     __asm__ volatile ("inw %1, %0" : "=a"(result) : "Nd"(port));
     return result;
 }
 
-static inline  outb43(uint16_t port, uint8_t val) {
-    __asm__ volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
-}
-
-static inline  outw65(uint16_t port, uint16_t val) {
+static inline  outw(uint16_t port, uint16_t val) {
     __asm__ volatile ("outw %0, %1" : : "a"(val), "Nd"(port));
 }
 
@@ -42,15 +38,14 @@ int memcmp(const void *a, const void *b, size_t n) {
     }
     return 0;
 }
-void acpi_shutdown() {
+void acpi_shutdown() { // spegne usando ACPI.
 
-    // Cerca RSDP
+  
     for (uint32_t addr = 0x000E0000; addr < 0x00100000; addr += 16) {
         if (memcmp((char *)addr, "RSD PTR ", 8) == 0) {
-            uint32_t *rsdt_addr = *(uint32_t *)(addr + 16); // offset RsdtAddress
+            uint32_t *rsdt_addr = *(uint32_t *)(addr + 16);
             char *rsdt = (char *)rsdt_addr;
 
-            // Cerca FACP/FADT
             int entries = *((uint32_t *)(rsdt + 4)) - 36;
             entries /= 4;
             uint32_t *table_ptrs = (uint32_t *)(rsdt + 36);
@@ -59,23 +54,21 @@ void acpi_shutdown() {
                 if (memcmp(sig, "FACP", 4) == 0) {
                     FADT *fadt = (FADT *)sig;
 
-                    // Enable ACPI (se necessario)
-                    if (!(inWW(fadt->PM1a_CNT_BLK) & SCI_EN)) {
+                    if (!(inw(fadt->PM1a_CNT_BLK) & SCI_EN)) {
                         if (fadt->SMI_CMD != 0 && fadt->ACPI_ENABLE != 0) {
                             outb(fadt->SMI_CMD, fadt->ACPI_ENABLE);
                             for (int i = 0; i < 300; i++) {
-                                if (inWW(fadt->PM1a_CNT_BLK) & SCI_EN)
+                                if (inw(fadt->PM1a_CNT_BLK) & SCI_EN)
                                     break;
                             }
                         }
                     }
 
-                    // Cerca \_S5 nella DSDT
                     char *dsdt = (char *)fadt->DSDT;
                     int len = *((uint32_t *)(dsdt + 4));
                     for (int i = 0; i < len - 4; i++) {
                         if (memcmp(dsdt + i, "_S5_", 4) == 0) {
-                            // Salta opcode AML
+
                             uint8_t *pkg = (uint8_t *)(dsdt + i + 5);
                             pkg += ((*pkg & 0xC0) >> 6) + 2;
 
@@ -90,9 +83,9 @@ void acpi_shutdown() {
                             uint16_t slp_typa = typa << 10;
                             uint16_t slp_typb = typb << 10;
 
-                            outw65(fadt->PM1a_CNT_BLK, slp_typa | SLP_EN);
+                            outw(fadt->PM1a_CNT_BLK, slp_typa | SLP_EN);
                             if (fadt->PM1b_CNT_BLK)
-                                outw65(fadt->PM1b_CNT_BLK, slp_typb | SLP_EN);
+                                outw(fadt->PM1b_CNT_BLK, slp_typb | SLP_EN);
 
                         
                             return;
@@ -102,7 +95,4 @@ void acpi_shutdown() {
             }
         }
     }
-
-
 }
-
