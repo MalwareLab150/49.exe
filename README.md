@@ -24,6 +24,7 @@ Preview of my malware (:)<img width="1152" height="864" alt="Windows XP Professi
 <img width="1152" height="864" alt="Windows XP Professional XXXXXXXXXXXXXX-2025-09-11-20-42-53" src="https://github.com/user-attachments/assets/4feabe0c-855b-4a6d-83d9-c82ac511cb8f" />
 
 <img width="1152" height="864" alt="Windows XP Professional XXXXXXXXXXXXXX-2025-09-12-12-52-23" src="https://github.com/user-attachments/assets/0aad6db2-46a3-4ca7-8ef7-0bf95a1dd13c" />
+<img width="1152" height="864" alt="Windows XP Professional XXXXXXXXXXXXXX-2025-09-11-20-15-32" src="https://github.com/user-attachments/assets/c62447e9-ed09-434d-9e71-9e7007195768" />
 
 
 <img width="535" height="288" alt="Screenshot 2025-09-11 234529" src="https://github.com/user-attachments/assets/40d86f10-b4dc-4370-a140-c71b6dbfc93e" />
