@@ -6,7 +6,7 @@ The MBR is a kernel in C - the Bootloader in x86 asm and the GDI are inspired by
 
 Credits?
 MalwareLab150
-Calibrated
+Calibrato
 HolyMacaroni
 
 <img width="535" height="288" alt="Screenshot 2025-09-11 234529" src="https://github.com/user-attachments/assets/40d86f10-b4dc-4370-a140-c71b6dbfc93e" />
