@@ -1,7 +1,6 @@
-Hi, here's the kernel source code for 49.exe.
-Please give me credit.
-Anyway, this is my best GDI malware ever.
-56 payloads with a Solaris-style MBR :(), the MBR is a kernel in C - the Bootloader in x86 asm and the GDI are inspired by salvia divinorum (all in C#).
+**This is my best GDI malware ever.**
+56 payloads with a Solaris-style MBR :(). 
+The MBR is a kernel in C - the Bootloader in x86 asm and the GDI are inspired by the psychedelic salvia divinorum (all in C#).
 Credits?
 MalwareLab150
 Calibrated
