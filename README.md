@@ -1,5 +1,7 @@
 **This is my best GDI malware ever.**
+
 56 payloads with a Solaris-style MBR :(). 
+
 The MBR is a kernel in C - the Bootloader in x86 asm and the GDI are inspired by the psychedelic salvia divinorum (all in C#).
 Credits?
 MalwareLab150
